@@ -4,14 +4,14 @@ class Product {
   final String name;
   final String type;
   final double price;
-  final String? imageUrl;
+  final String imageUrl;
 
   Product({
     required this.id,
     required this.name,
     required this.type,
     required this.price,
-    this.imageUrl,
+    required this.imageUrl,
   });
 
   Map<String, dynamic> toFirestore() {
@@ -32,6 +32,26 @@ class Product {
       type: data['type'] ?? '',
       price: (data['price'] ?? 0).toDouble(),
       imageUrl: data['imageUrl'],
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'name': name,
+      'type': type,
+      'price': price,
+      'imageUrl': imageUrl,
+    };
+  }
+
+  factory Product.fromMap(String docId, Map<String, dynamic> data) {
+    return Product(
+      id: docId,
+      name: data['name'] ?? '',
+      type: data['type'] ?? '',
+      price: (data['price'] ?? 0).toDouble(),
+      imageUrl: data['imageUrl'] ?? '',
     );
   }
 }
