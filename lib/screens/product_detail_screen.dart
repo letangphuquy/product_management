@@ -1,44 +1,95 @@
 // screens/product_detail_screen.dart
 import 'package:flutter/material.dart';
 import '../models/product_model.dart';
+import '../services/firestore_service.dart';
 
-class ProductDetailScreen extends StatelessWidget {
+class ProductDetailScreen extends StatefulWidget {
   final Product product;
 
-  const ProductDetailScreen({Key? key, required this.product}) : super(key: key);
+  const ProductDetailScreen({Key? key, required this.product})
+      : super(key: key);
+
+  @override
+  _ProductDetailScreenState createState() => _ProductDetailScreenState();
+}
+
+class _ProductDetailScreenState extends State<ProductDetailScreen> {
+  late TextEditingController _nameController;
+  late TextEditingController _typeController;
+  late TextEditingController _priceController;
+
+  final FirestoreService _firestoreService = FirestoreService();
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize controllers with existing product data
+    _nameController = TextEditingController(text: widget.product.name);
+    _typeController = TextEditingController(text: widget.product.type);
+    _priceController =
+        TextEditingController(text: widget.product.price.toString());
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _typeController.dispose();
+    _priceController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _saveChanges() async {
+    // Create an updated product, keeping the same id and imageUrl
+    final updatedProduct = Product(
+      id: widget.product.id,
+      name: _nameController.text,
+      type: _typeController.text,
+      price: double.tryParse(_priceController.text) ?? 0.0,
+      imageUrl: widget.product.imageUrl,
+    );
+
+    try {
+      await _firestoreService.updateProduct(updatedProduct);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Product updated successfully')),
+      );
+      Navigator.pop(context); // Return to previous screen
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error updating product: $e')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Product Detail')),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            // Displaying the product's image if available
-            product.imageUrl.isNotEmpty
-                ? Image.network(product.imageUrl, height: 150, fit: BoxFit.cover)
+            widget.product.imageUrl.isNotEmpty
+                ? Image.network(widget.product.imageUrl,
+                    height: 150, fit: BoxFit.cover)
                 : const Icon(Icons.image, size: 100),
+            const SizedBox(height: 20),
             TextField(
-              controller: TextEditingController(text: product.name),
+              controller: _nameController,
               decoration: const InputDecoration(labelText: 'Product Name'),
-              enabled: false, // Making it non-editable for now
             ),
             TextField(
-              controller: TextEditingController(text: product.type),
+              controller: _typeController,
               decoration: const InputDecoration(labelText: 'Product Type'),
-              enabled: false, // Making it non-editable for now
             ),
             TextField(
-              controller: TextEditingController(text: product.price.toString()),
+              controller: _priceController,
               decoration: const InputDecoration(labelText: 'Price'),
-              enabled: false, // Making it non-editable for now
+              keyboardType: TextInputType.number,
             ),
             const SizedBox(height: 20),
             ElevatedButton(
-              onPressed: () {
-                // Save any changes or navigate back
-              },
+              onPressed: _saveChanges,
               child: const Text('Save Changes'),
             ),
           ],
