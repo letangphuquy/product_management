@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "35075678219",
+    "project_id": "qlsp-b75fc",
+    "storage_bucket": "qlsp-b75fc.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:35075678219:android:dfa736d6438206deeca70e",
+        "android_client_info": {
+          "package_name": "com.example.product_management"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBfWwO5AAcplbOKEiHNkhZ4wi9YRYz1mcs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
