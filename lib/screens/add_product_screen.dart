@@ -2,6 +2,10 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import '../services/firestore_service.dart';
+import '../services/storage_service.dart';
+import '../models/product_model.dart';
+import 'product_detail_screen.dart';
 
 class AddProductScreen extends StatefulWidget {
   const AddProductScreen({Key? key}) : super(key: key);
@@ -16,6 +20,13 @@ class _AddProductScreenState extends State<AddProductScreen> {
   final _priceController = TextEditingController();
   File? _image;
 
+  final FirestoreService _firestoreService = FirestoreService();
+  final StorageService _storageService = StorageService();
+
+  // Default image URL (replace this with a URL to a default image you want)
+  final String _defaultImageUrl =
+      'https://cdn.pixabay.com/photo/2020/01/25/16/48/garden-4792880_960_720.jpg';  // Placeholder URL
+
   Future<void> _pickImage() async {
     final ImagePicker picker = ImagePicker();
     final XFile? xfile = await picker.pickImage(source: ImageSource.gallery);
@@ -23,6 +34,48 @@ class _AddProductScreenState extends State<AddProductScreen> {
       setState(() {
         _image = File(xfile.path);
       });
+    }
+  }
+
+  Future<void> _addProduct() async {
+    // if (!_formKey.currentState!.validate()) return;
+
+    String imageUrl = _defaultImageUrl;
+    if (_image != null) {
+      try {
+        imageUrl = await _storageService.uploadImage(_image!);
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error uploading image: $e')),
+        );
+        return;
+      }
+    }
+
+    final product = Product(
+      id: '', // Firestore auto-generates
+      name: _nameController.text,
+      type: _typeController.text,
+      price: double.tryParse(_priceController.text) ?? 0.0,
+      imageUrl: imageUrl,
+    );
+
+    try {
+      await _firestoreService.addProduct(product);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Product added successfully')),
+      );
+      // Navigate to the Product Detail Screen with the added product
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => ProductDetailScreen(product: product),
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error adding product: $e')),
+      );
     }
   }
 
@@ -38,12 +91,10 @@ class _AddProductScreenState extends State<AddProductScreen> {
               onTap: _pickImage,
               child: _image == null
                   ? Container(
-                      color: Colors.grey[200],
-                      width: 100,
-                      height: 100,
-                      child: const Icon(Icons.camera_alt),
+                      width: 100, height: 100, color: Colors.grey[300],
+                      child: Image.network(_defaultImageUrl), // Show default image
                     )
-                  : Image.file(_image!, width: 100, height: 100),
+                  : Image.file(_image!, width: 100, height: 100, fit: BoxFit.cover),
             ),
             TextField(
               controller: _nameController,
@@ -56,12 +107,11 @@ class _AddProductScreenState extends State<AddProductScreen> {
             TextField(
               controller: _priceController,
               decoration: const InputDecoration(labelText: 'Price'),
+              keyboardType: TextInputType.number,
             ),
             const SizedBox(height: 20),
             ElevatedButton(
-              onPressed: () {
-                // Add the product (to be implemented)
-              },
+              onPressed: _addProduct,
               child: const Text('Save Product'),
             ),
           ],

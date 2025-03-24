@@ -9,6 +9,7 @@ class FirestoreService {
   // CREATE
   Future<void> addProduct(Product product) async {
     try {
+      // Add product to Firestore with imageUrl
       await _productsRef.add(product.toMap());
     } catch (e) {
       throw 'Error adding product: $e';
