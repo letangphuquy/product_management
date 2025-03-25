@@ -72,6 +72,7 @@ yarn-error.log*
 
 # Environment files (local configs)
 /.env.*
+*.env
 
 lib/firebase_options.dart
 **/google-services.json
