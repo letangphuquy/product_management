@@ -17,6 +17,9 @@ class ProductDetailScreen extends StatefulWidget {
 }
 
 class _ProductDetailScreenState extends State<ProductDetailScreen> {
+  final _formKey = GlobalKey<FormState>();
+  bool _isLoading = false;
+
   late TextEditingController _nameController;
   late TextEditingController _typeController;
   late TextEditingController _priceController;
@@ -56,6 +59,11 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   }
 
   Future<void> _saveChanges() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() {
+      _isLoading = true;
+    });
+
     String imageUrl = widget.product.imageUrl;
     // If a new image was selected, upload it
     if (_newImage != null) {
@@ -92,6 +100,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error updating product: $e')),
       );
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 
@@ -113,34 +125,60 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       appBar: AppBar(title: const Text('Product Detail')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            displayImage,
-            const SizedBox(height: 10),
-            ElevatedButton(
-              onPressed: _pickNewImage,
-              child: const Text('Change Image'),
-            ),
-            const SizedBox(height: 20),
-            TextField(
-              controller: _nameController,
-              decoration: const InputDecoration(labelText: 'Product Name'),
-            ),
-            TextField(
-              controller: _typeController,
-              decoration: const InputDecoration(labelText: 'Product Type'),
-            ),
-            TextField(
-              controller: _priceController,
-              decoration: const InputDecoration(labelText: 'Price'),
-              keyboardType: TextInputType.number,
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _saveChanges,
-              child: const Text('Save Changes'),
-            ),
-          ],
+        child: Form(
+          key: _formKey,
+          child: Column(
+            children: [
+              displayImage,
+              const SizedBox(height: 10),
+              ElevatedButton(
+                onPressed: _pickNewImage,
+                child: const Text('Change Image'),
+              ),
+              const SizedBox(height: 20),
+              TextFormField(
+                controller: _nameController,
+                decoration: const InputDecoration(labelText: 'Product Name'),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter a product name';
+                  }
+                  return null;
+                },
+              ),
+              TextFormField(
+                controller: _typeController,
+                decoration: const InputDecoration(labelText: 'Product Type'),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter a product type';
+                  }
+                  return null;
+                },
+              ),
+              TextFormField(
+                controller: _priceController,
+                decoration: const InputDecoration(labelText: 'Price'),
+                keyboardType: TextInputType.number,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter a price';
+                  }
+                  if (double.tryParse(value) == null) {
+                    return 'Enter a valid number';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 20),
+              _isLoading
+                  ? const CircularProgressIndicator()
+                  : ElevatedButton(
+                      onPressed: _saveChanges,
+                      child: const Text('Save Changes'),
+                    ),
+            ],
+          ),
         ),
       ),
     );

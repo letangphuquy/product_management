@@ -9,14 +9,14 @@ class ProductImagePicker extends StatefulWidget {
   final String defaultAssetImagePath;
 
   const ProductImagePicker({
-    Key? key,
+    super.key,
     required this.image,
     required this.onImagePicked,
     required this.defaultAssetImagePath,
-  }) : super(key: key);
+  });
 
   @override
-  _ProductImagePickerState createState() => _ProductImagePickerState();
+  State<ProductImagePicker> createState() => _ProductImagePickerState();
 }
 
 class _ProductImagePickerState extends State<ProductImagePicker> {

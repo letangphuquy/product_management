@@ -8,13 +8,16 @@ import 'product_detail_screen.dart';
 import '../widgets/product_image_picker.dart';
 
 class AddProductScreen extends StatefulWidget {
-  const AddProductScreen({Key? key}) : super(key: key);
+  const AddProductScreen({super.key});
 
   @override
-  _AddProductScreenState createState() => _AddProductScreenState();
+  State<AddProductScreen> createState() => _AddProductScreenState();
 }
 
 class _AddProductScreenState extends State<AddProductScreen> {
+  final _formKey = GlobalKey<FormState>();
+  bool _isLoading = false;
+
   final _nameController = TextEditingController();
   final _typeController = TextEditingController();
   final _priceController = TextEditingController();
@@ -28,11 +31,17 @@ class _AddProductScreenState extends State<AddProductScreen> {
   final String _defaultAssetImagePath = 'assets/default_product.png';
 
   Future<void> _addProduct() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() {
+      _isLoading = true;
+    });
+
     String imageUrl = ''; // Will be updated after checking image selection.
     if (_image != null) {
       try {
         imageUrl = await _storageService.uploadImage(_image!);
       } catch (e) {
+        if (!mounted) return ;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error uploading image: $e')),
         );
@@ -62,19 +71,29 @@ class _AddProductScreenState extends State<AddProductScreen> {
         price: product.price,
         imageUrl: product.imageUrl,
       );
+      if (!mounted) return ;
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Product added successfully')),
       );
-      Navigator.push(
+      Navigator.pushReplacement(
         context,
         MaterialPageRoute(
           builder: (_) => ProductDetailScreen(product: updatedProduct),
         ),
       );
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error adding product: $e')),
-      );
+// Don't use 'BuildContext's across async gaps.
+// Try rewriting the code to not use the 'BuildContext', or guard the use with a 'mounted' check.
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error adding product: $e')),
+        );
+      }
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 
@@ -84,36 +103,62 @@ class _AddProductScreenState extends State<AddProductScreen> {
       appBar: AppBar(title: const Text('Add Product')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            ProductImagePicker(
-              image: _image,
-              defaultAssetImagePath: _defaultAssetImagePath,
-              onImagePicked: (pickedImage) {
-                setState(() {
-                  _image = pickedImage;
-                });
-              },
-            ),
-            TextField(
-              controller: _nameController,
-              decoration: const InputDecoration(labelText: 'Product Name'),
-            ),
-            TextField(
-              controller: _typeController,
-              decoration: const InputDecoration(labelText: 'Product Type'),
-            ),
-            TextField(
-              controller: _priceController,
-              decoration: const InputDecoration(labelText: 'Price'),
-              keyboardType: TextInputType.number,
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _addProduct,
-              child: const Text('Save Product'),
-            ),
-          ],
+        child: Form(
+          key: _formKey,
+          child: Column(
+            children: [
+              ProductImagePicker(
+                image: _image,
+                defaultAssetImagePath: _defaultAssetImagePath,
+                onImagePicked: (pickedImage) {
+                  setState(() {
+                    _image = pickedImage;
+                  });
+                },
+              ),
+              TextFormField(
+                controller: _nameController,
+                decoration: const InputDecoration(labelText: 'Product Name'),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter a product name';
+                  }
+                  return null;
+                },
+              ),
+              TextFormField(
+                controller: _typeController,
+                decoration: const InputDecoration(labelText: 'Product Type'),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter a product type';
+                  }
+                  return null;
+                },
+              ),
+              TextFormField(
+                controller: _priceController,
+                decoration: const InputDecoration(labelText: 'Price'),
+                keyboardType: TextInputType.number,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter a price';
+                  }
+                  if (double.tryParse(value) == null) {
+                    return 'Enter a valid number';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 20),
+              _isLoading
+                  ? const CircularProgressIndicator()
+                  : ElevatedButton(
+                      onPressed: _addProduct,
+                      child: const Text('Save Product'),
+                    ),
+            ],
+          ),
         ),
       ),
     );
