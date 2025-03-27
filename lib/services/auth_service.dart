@@ -7,13 +7,28 @@ class AuthService {
   // Sign in with email and password
   Future<User?> signIn(String email, String password) async {
     try {
-      final UserCredential userCredential = await _auth.signInWithEmailAndPassword(
+      final UserCredential userCredential =
+          await _auth.signInWithEmailAndPassword(
         email: email.trim(),
         password: password.trim(),
       );
       return userCredential.user;
     } catch (e) {
       throw 'Error signing in: $e';
+    }
+  }
+
+  // Inside AuthService class
+  Future<User?> signUp(String email, String password) async {
+    try {
+      final UserCredential userCredential =
+          await _auth.createUserWithEmailAndPassword(
+        email: email.trim(),
+        password: password.trim(),
+      );
+      return userCredential.user;
+    } catch (e) {
+      throw 'Error signing up: $e';
     }
   }
 
