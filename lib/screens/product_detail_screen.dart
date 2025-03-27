@@ -60,6 +60,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     if (_newImage != null) {
       try {
         imageUrl = await _storageService.uploadImage(_newImage!);
+        // Delete the old image if it was uploaded via our StorageService
+        if (widget.product.imageUrl.contains('product_images')) {
+          await _storageService.deleteImage(widget.product.imageUrl);
+        }
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error uploading new image: $e')),

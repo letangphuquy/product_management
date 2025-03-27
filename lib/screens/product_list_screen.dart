@@ -15,9 +15,14 @@ class ProductListScreen extends StatefulWidget {
 class _ProductListScreenState extends State<ProductListScreen> {
   final FirestoreService _firestoreService = FirestoreService();
 
-  void _deleteProduct(String productId) {
-    _firestoreService.deleteProduct(productId);
+  void _deleteProduct(Product product) {
+    _firestoreService.deleteProduct(product).catchError((e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error deleting product: $e')),
+      );
+    });
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -71,7 +76,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
                 },
                 trailing: IconButton(
                   icon: const Icon(Icons.delete),
-                  onPressed: () => _deleteProduct(product.id),
+                  onPressed: () => _deleteProduct(product),
                 ),
               );
             },

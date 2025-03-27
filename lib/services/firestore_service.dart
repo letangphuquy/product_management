@@ -1,6 +1,7 @@
 // services/firestore_service.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/product_model.dart';
+import 'storage_service.dart';
 
 class FirestoreService {
   final CollectionReference _productsRef =
@@ -36,9 +37,14 @@ class FirestoreService {
   }
 
   // DELETE
-  Future<void> deleteProduct(String productId) async {
+   Future<void> deleteProduct(Product product) async {
     try {
-      await _productsRef.doc(productId).delete();
+      await _productsRef.doc(product.id).delete();
+      // Delete the image if it was uploaded (i.e., contains 'product_images')
+      StorageService storageService = StorageService();
+      if (product.imageUrl.contains('product_images')) {
+        await storageService.deleteImage(product.imageUrl);
+      }
     } catch (e) {
       throw 'Error deleting product: $e';
     }

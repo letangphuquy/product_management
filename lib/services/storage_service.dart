@@ -17,4 +17,25 @@ class StorageService {
       throw 'Error uploading image: $e';
     }
   }
+  
+  // Delete image from Firebase Storage using the download URL.
+  Future<void> deleteImage(String imageUrl) async {
+    try {
+      // Skip deletion if the URL is not from our storage (e.g., default image)
+      if (!imageUrl.contains('product_images')) return;
+
+      // Example URL:
+      // https://firebasestorage.googleapis.com/v0/b/your_project_id.appspot.com/o/product_images%2F1623679200000?alt=media&token=...
+      Uri uri = Uri.parse(imageUrl);
+      final parts = uri.path.split('/o/');
+      if (parts.length < 2) return;
+      final encodedPath = parts[1];
+      final decodedPath = Uri.decodeFull(encodedPath); // yields "product_images/1623679200000"
+      Reference ref = _storage.ref().child(decodedPath);
+      await ref.delete();
+    } catch (e) {
+      // Log the error; we don't want to break the user flow if deletion fails.
+      print('Error deleting image: $e');
+    }
+  }
 }
