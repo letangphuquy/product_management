@@ -1,8 +1,10 @@
 // screens/product_list_screen.dart
 import 'package:flutter/material.dart';
 import '../models/product_model.dart';
+import '../services/auth_service.dart';
 import '../services/firestore_service.dart';
 import 'add_product_screen.dart';
+import 'login_screen.dart';
 import 'product_detail_screen.dart';
 
 class ProductListScreen extends StatefulWidget {
@@ -61,13 +63,49 @@ class _ProductListScreenState extends State<ProductListScreen> {
         title: const Text('Product List'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.add),
+            icon: const Icon(Icons.logout),
+            onPressed: () async {
+              final shouldSignOut = await showDialog<bool>(
+                context: context,
+                builder: (context) {
+                  return AlertDialog(
+                    title: const Text('Confirm Sign Out'),
+                    content: const Text('Are you sure you want to sign out?'),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(false),
+                        child: const Text('Cancel'),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(true),
+                        child: const Text('Sign Out'),
+                      ),
+                    ],
+                  );
+                },
+              );
+              if (shouldSignOut == true) {
+                await AuthService().signOut();
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (_) => const LoginScreen()),
+                );
+              }
+            },
+          ),
+          TextButton.icon(
             onPressed: () {
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => const AddProductScreen()),
               );
             },
+            style: ButtonStyle(backgroundColor: WidgetStateProperty.all(Colors.pinkAccent[50])),
+            icon: const Icon(Icons.add, color: Colors.black),
+            label: const Text(
+              'Add',
+              style: TextStyle(color: Colors.black),
+            ),
           ),
         ],
       ),
@@ -101,7 +139,11 @@ class _ProductListScreenState extends State<ProductListScreen> {
                         fit: BoxFit.cover,
                       ),
                 title: Text(product.name),
-                subtitle: Text('Price: ${product.price} - ${product.type}', maxLines: 1, overflow: TextOverflow.ellipsis,),
+                subtitle: Text(
+                  'Price: ${product.price} - ${product.type}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
                 onTap: () {
                   Navigator.push(
                     context,
