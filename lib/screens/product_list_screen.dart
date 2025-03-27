@@ -101,7 +101,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
                         fit: BoxFit.cover,
                       ),
                 title: Text(product.name),
-                subtitle: Text('Price: ${product.price}'),
+                subtitle: Text('Price: ${product.price} - ${product.type}', maxLines: 1, overflow: TextOverflow.ellipsis,),
                 onTap: () {
                   Navigator.push(
                     context,
