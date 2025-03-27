@@ -1,11 +1,11 @@
 // screens/add_product_screen.dart
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 import '../services/firestore_service.dart';
 import '../services/storage_service.dart';
 import '../models/product_model.dart';
 import 'product_detail_screen.dart';
+import '../widgets/product_image_picker.dart';
 
 class AddProductScreen extends StatefulWidget {
   const AddProductScreen({Key? key}) : super(key: key);
@@ -24,21 +24,11 @@ class _AddProductScreenState extends State<AddProductScreen> {
   final StorageService _storageService = StorageService();
 
   // Default image URL (replace this with a URL to a default image you want)
-  final String _defaultImageUrl =
-      'https://cdn.pixabay.com/photo/2020/01/25/16/48/garden-4792880_960_720.jpg'; // Placeholder URL
-
-  Future<void> _pickImage() async {
-    final ImagePicker picker = ImagePicker();
-    final XFile? xfile = await picker.pickImage(source: ImageSource.gallery);
-    if (xfile != null) {
-      setState(() {
-        _image = File(xfile.path);
-      });
-    }
-  }
+  //// Placeholder URL
+  final String _defaultAssetImagePath = 'assets/default_product.png';
 
   Future<void> _addProduct() async {
-    String imageUrl = _defaultImageUrl;
+    String imageUrl = ''; // Will be updated after checking image selection.
     if (_image != null) {
       try {
         imageUrl = await _storageService.uploadImage(_image!);
@@ -48,8 +38,11 @@ class _AddProductScreenState extends State<AddProductScreen> {
         );
         return;
       }
+    } else {
+      // Optionally, you can also upload the default asset image if required,
+      // or simply store an empty URL indicating that the default asset should be used in the UI.
+      imageUrl = _defaultAssetImagePath;
     }
-
     // Create product with temporary id
     final product = Product(
       id: '', // temporary; will be updated
@@ -94,16 +87,14 @@ class _AddProductScreenState extends State<AddProductScreen> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            GestureDetector(
-              onTap: _pickImage,
-              child: _image == null
-                  ? Container(
-                      width: 100, height: 100, color: Colors.grey[300],
-                      child:
-                          Image.network(_defaultImageUrl), // Show default image
-                    )
-                  : Image.file(_image!,
-                      width: 100, height: 100, fit: BoxFit.cover),
+            ProductImagePicker(
+              image: _image,
+              defaultAssetImagePath: _defaultAssetImagePath,
+              onImagePicked: (pickedImage) {
+                setState(() {
+                  _image = pickedImage;
+                });
+              },
             ),
             TextField(
               controller: _nameController,
