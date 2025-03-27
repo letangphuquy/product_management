@@ -25,7 +25,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
 
   // Default image URL (replace this with a URL to a default image you want)
   final String _defaultImageUrl =
-      'https://cdn.pixabay.com/photo/2020/01/25/16/48/garden-4792880_960_720.jpg';  // Placeholder URL
+      'https://cdn.pixabay.com/photo/2020/01/25/16/48/garden-4792880_960_720.jpg'; // Placeholder URL
 
   Future<void> _pickImage() async {
     final ImagePicker picker = ImagePicker();
@@ -38,8 +38,6 @@ class _AddProductScreenState extends State<AddProductScreen> {
   }
 
   Future<void> _addProduct() async {
-    // if (!_formKey.currentState!.validate()) return;
-
     String imageUrl = _defaultImageUrl;
     if (_image != null) {
       try {
@@ -52,8 +50,9 @@ class _AddProductScreenState extends State<AddProductScreen> {
       }
     }
 
+    // Create product with temporary id
     final product = Product(
-      id: '', // Firestore auto-generates
+      id: '', // temporary; will be updated
       name: _nameController.text,
       type: _typeController.text,
       price: double.tryParse(_priceController.text) ?? 0.0,
@@ -61,15 +60,23 @@ class _AddProductScreenState extends State<AddProductScreen> {
     );
 
     try {
-      await _firestoreService.addProduct(product);
+      // Capture the new document id from Firestore
+      final String docId = await _firestoreService.addProduct(product);
+      // Update product with the actual id
+      final updatedProduct = Product(
+        id: docId,
+        name: product.name,
+        type: product.type,
+        price: product.price,
+        imageUrl: product.imageUrl,
+      );
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Product added successfully')),
       );
-      // Navigate to the Product Detail Screen with the added product
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => ProductDetailScreen(product: product),
+          builder: (_) => ProductDetailScreen(product: updatedProduct),
         ),
       );
     } catch (e) {
@@ -92,9 +99,11 @@ class _AddProductScreenState extends State<AddProductScreen> {
               child: _image == null
                   ? Container(
                       width: 100, height: 100, color: Colors.grey[300],
-                      child: Image.network(_defaultImageUrl), // Show default image
+                      child:
+                          Image.network(_defaultImageUrl), // Show default image
                     )
-                  : Image.file(_image!, width: 100, height: 100, fit: BoxFit.cover),
+                  : Image.file(_image!,
+                      width: 100, height: 100, fit: BoxFit.cover),
             ),
             TextField(
               controller: _nameController,

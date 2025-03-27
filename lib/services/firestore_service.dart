@@ -7,14 +7,15 @@ class FirestoreService {
       FirebaseFirestore.instance.collection('products');
 
   // CREATE
-  Future<void> addProduct(Product product) async {
+  Future<String> addProduct(Product product) async {
     try {
-      // Add product to Firestore with imageUrl
-      await _productsRef.add(product.toMap());
+      DocumentReference docRef = await _productsRef.add(product.toMap());
+      return docRef.id;
     } catch (e) {
       throw 'Error adding product: $e';
     }
   }
+
 
   // READ (Stream of all products)
   Stream<List<Product>> getProductsStream() {
