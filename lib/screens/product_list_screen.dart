@@ -14,6 +14,35 @@ class ProductListScreen extends StatefulWidget {
 
 class _ProductListScreenState extends State<ProductListScreen> {
   final FirestoreService _firestoreService = FirestoreService();
+  static const String defaultAssetImagePath = 'assets/default_product.png';
+
+   void _confirmDelete(Product product) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text("Confirm Delete"),
+          content: Text("Are you sure you want to delete '${product.name}'?"),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text("Cancel"),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // close the dialog
+                _deleteProduct(product);
+              },
+              child: const Text(
+                "Delete",
+                style: TextStyle(color: Colors.red),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   void _deleteProduct(Product product) {
     _firestoreService.deleteProduct(product).catchError((e) {
@@ -25,6 +54,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
 
 
   @override
+   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -63,7 +93,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
               return ListTile(
                 leading: (product.imageUrl.isNotEmpty)
                     ? Image.network(product.imageUrl, width: 50, height: 50, fit: BoxFit.cover)
-                    : const Icon(Icons.image),
+                    : Image.asset(defaultAssetImagePath, width: 50, height: 50, fit: BoxFit.cover,),
                 title: Text(product.name),
                 subtitle: Text('Price: ${product.price}'),
                 onTap: () {
@@ -76,7 +106,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
                 },
                 trailing: IconButton(
                   icon: const Icon(Icons.delete),
-                  onPressed: () => _deleteProduct(product),
+                  onPressed: () => _confirmDelete(product),
                 ),
               );
             },
@@ -86,3 +116,4 @@ class _ProductListScreenState extends State<ProductListScreen> {
     );
   }
 }
+

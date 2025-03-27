@@ -24,6 +24,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   final FirestoreService _firestoreService = FirestoreService();
 
   File? _newImage;
+  static const String defaultAssetImagePath = 'assets/default_product.png';
   final StorageService _storageService = StorageService();
 
   @override
@@ -60,8 +61,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     if (_newImage != null) {
       try {
         imageUrl = await _storageService.uploadImage(_newImage!);
-        // Delete the old image if it was uploaded via our StorageService
-        if (widget.product.imageUrl.contains('product_images')) {
+        // Delete the old image if it was uploaded (and not the default asset)
+        if (widget.product.imageUrl.isNotEmpty &&
+            widget.product.imageUrl.contains('product_images')) {
           await _storageService.deleteImage(widget.product.imageUrl);
         }
       } catch (e) {
@@ -95,19 +97,25 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Decide which image to show: new image if picked, network image if available, otherwise the default asset.
+    Widget displayImage;
+    if (_newImage != null) {
+      displayImage = Image.file(_newImage!, height: 150, fit: BoxFit.cover);
+    } else if (widget.product.imageUrl.isNotEmpty) {
+      displayImage = Image.network(widget.product.imageUrl,
+          height: 150, fit: BoxFit.cover);
+    } else {
+      displayImage =
+          Image.asset(defaultAssetImagePath, height: 150, fit: BoxFit.cover);
+    }
+
     return Scaffold(
       appBar: AppBar(title: const Text('Product Detail')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            // Display current or newly selected image
-            _newImage != null
-                ? Image.file(_newImage!, height: 150, fit: BoxFit.cover)
-                : (widget.product.imageUrl.isNotEmpty
-                    ? Image.network(widget.product.imageUrl,
-                        height: 150, fit: BoxFit.cover)
-                    : const Icon(Icons.image, size: 100)),
+            displayImage,
             const SizedBox(height: 10),
             ElevatedButton(
               onPressed: _pickNewImage,

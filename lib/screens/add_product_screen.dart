@@ -39,9 +39,8 @@ class _AddProductScreenState extends State<AddProductScreen> {
         return;
       }
     } else {
-      // Optionally, you can also upload the default asset image if required,
-      // or simply store an empty URL indicating that the default asset should be used in the UI.
-      imageUrl = _defaultAssetImagePath;
+      // No image was picked: store an empty string so that the UI can use the default asset.
+      imageUrl = '';
     }
     // Create product with temporary id
     final product = Product(
