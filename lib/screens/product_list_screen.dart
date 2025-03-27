@@ -6,17 +6,17 @@ import 'add_product_screen.dart';
 import 'product_detail_screen.dart';
 
 class ProductListScreen extends StatefulWidget {
-  const ProductListScreen({Key? key}) : super(key: key);
+  const ProductListScreen({super.key});
 
   @override
-  _ProductListScreenState createState() => _ProductListScreenState();
+  State<ProductListScreen> createState() => _ProductListScreenState();
 }
 
 class _ProductListScreenState extends State<ProductListScreen> {
   final FirestoreService _firestoreService = FirestoreService();
   static const String defaultAssetImagePath = 'assets/default_product.png';
 
-   void _confirmDelete(Product product) {
+  void _confirmDelete(Product product) {
     showDialog(
       context: context,
       builder: (context) {
@@ -46,15 +46,15 @@ class _ProductListScreenState extends State<ProductListScreen> {
 
   void _deleteProduct(Product product) {
     _firestoreService.deleteProduct(product).catchError((e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error deleting product: $e')),
       );
     });
   }
 
-
   @override
-   @override
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -92,8 +92,14 @@ class _ProductListScreenState extends State<ProductListScreen> {
               final product = products[index];
               return ListTile(
                 leading: (product.imageUrl.isNotEmpty)
-                    ? Image.network(product.imageUrl, width: 50, height: 50, fit: BoxFit.cover)
-                    : Image.asset(defaultAssetImagePath, width: 50, height: 50, fit: BoxFit.cover,),
+                    ? Image.network(product.imageUrl,
+                        width: 50, height: 50, fit: BoxFit.cover)
+                    : Image.asset(
+                        defaultAssetImagePath,
+                        width: 50,
+                        height: 50,
+                        fit: BoxFit.cover,
+                      ),
                 title: Text(product.name),
                 subtitle: Text('Price: ${product.price}'),
                 onTap: () {
@@ -116,4 +122,3 @@ class _ProductListScreenState extends State<ProductListScreen> {
     );
   }
 }
-

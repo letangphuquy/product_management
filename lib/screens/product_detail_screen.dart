@@ -9,11 +9,10 @@ import '../services/storage_service.dart';
 class ProductDetailScreen extends StatefulWidget {
   final Product product;
 
-  const ProductDetailScreen({Key? key, required this.product})
-      : super(key: key);
+  const ProductDetailScreen({super.key, required this.product});
 
   @override
-  _ProductDetailScreenState createState() => _ProductDetailScreenState();
+  State<ProductDetailScreen> createState() => _ProductDetailScreenState();
 }
 
 class _ProductDetailScreenState extends State<ProductDetailScreen> {
@@ -30,6 +29,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   static const String defaultAssetImagePath = 'assets/default_product.png';
   final StorageService _storageService = StorageService();
 
+  late String _currentImageUrl;
+
   @override
   void initState() {
     super.initState();
@@ -38,6 +39,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     _typeController = TextEditingController(text: widget.product.type);
     _priceController =
         TextEditingController(text: widget.product.price.toString());
+    _currentImageUrl = widget.product.imageUrl; // initialize current image URL
   }
 
   @override
@@ -64,7 +66,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       _isLoading = true;
     });
 
-    String imageUrl = widget.product.imageUrl;
+    String imageUrl = _currentImageUrl;
     // If a new image was selected, upload it
     if (_newImage != null) {
       try {
@@ -75,6 +77,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
           await _storageService.deleteImage(widget.product.imageUrl);
         }
       } catch (e) {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error uploading new image: $e')),
         );
@@ -92,11 +95,13 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
 
     try {
       await _firestoreService.updateProduct(updatedProduct);
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Product updated successfully')),
       );
       Navigator.pop(context); // Return to previous screen
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error updating product: $e')),
       );
@@ -110,14 +115,14 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   @override
   Widget build(BuildContext context) {
     // Decide which image to show: new image if picked, network image if available, otherwise the default asset.
-    Widget displayImage;
+    Widget imageWidget;
     if (_newImage != null) {
-      displayImage = Image.file(_newImage!, height: 150, fit: BoxFit.cover);
-    } else if (widget.product.imageUrl.isNotEmpty) {
-      displayImage = Image.network(widget.product.imageUrl,
-          height: 150, fit: BoxFit.cover);
+      imageWidget = Image.file(_newImage!, height: 150, fit: BoxFit.cover);
+    } else if (_currentImageUrl.isNotEmpty) {
+      imageWidget =
+          Image.network(_currentImageUrl, height: 150, fit: BoxFit.cover);
     } else {
-      displayImage =
+      imageWidget =
           Image.asset(defaultAssetImagePath, height: 150, fit: BoxFit.cover);
     }
 
@@ -129,7 +134,36 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
           key: _formKey,
           child: Column(
             children: [
-              displayImage,
+              Stack(
+                children: [
+                  imageWidget,
+                  if ((_newImage != null) || _currentImageUrl.isNotEmpty)
+                    Positioned(
+                      top: 0,
+                      right: 0,
+                      child: GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _newImage = null;
+                            _currentImageUrl = ''; // remove current image
+                          });
+                        },
+                        child: Container(
+                          decoration: const BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.black54,
+                          ),
+                          padding: const EdgeInsets.all(4),
+                          child: const Icon(
+                            Icons.close,
+                            color: Colors.white,
+                            size: 16,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
               const SizedBox(height: 10),
               ElevatedButton(
                 onPressed: _pickNewImage,

@@ -41,7 +41,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
       try {
         imageUrl = await _storageService.uploadImage(_image!);
       } catch (e) {
-        if (!mounted) return ;
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error uploading image: $e')),
         );
@@ -71,7 +71,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
         price: product.price,
         imageUrl: product.imageUrl,
       );
-      if (!mounted) return ;
+      if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Product added successfully')),
@@ -107,14 +107,45 @@ class _AddProductScreenState extends State<AddProductScreen> {
           key: _formKey,
           child: Column(
             children: [
-              ProductImagePicker(
-                image: _image,
-                defaultAssetImagePath: _defaultAssetImagePath,
-                onImagePicked: (pickedImage) {
-                  setState(() {
-                    _image = pickedImage;
-                  });
-                },
+              Stack(children: [
+                ProductImagePicker(
+                  image: _image,
+                  defaultAssetImagePath: _defaultAssetImagePath,
+                  onImagePicked: (pickedImage) {
+                    setState(() {
+                      _image = pickedImage;
+                    });
+                  },
+                ),
+                if (_image != null)
+                  Positioned(
+                    top: 0,
+                    right: 0,
+                    child: GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          _image = null;
+                        });
+                      },
+                      child: Container(
+                        decoration: const BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.black54,
+                        ),
+                        padding: const EdgeInsets.all(4),
+                        child: const Icon(
+                          Icons.close,
+                          color: Colors.white,
+                          size: 16,
+                        ),
+                      ),
+                    ),
+                  ),
+              ]),
+              const SizedBox(height: 8),
+              const Text(
+                'Tap image to change',
+                style: TextStyle(fontSize: 12, color: Colors.grey),
               ),
               TextFormField(
                 controller: _nameController,
