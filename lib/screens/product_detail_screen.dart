@@ -1,7 +1,10 @@
 // screens/product_detail_screen.dart
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import '../models/product_model.dart';
 import '../services/firestore_service.dart';
+import '../services/storage_service.dart';
 
 class ProductDetailScreen extends StatefulWidget {
   final Product product;
@@ -19,6 +22,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   late TextEditingController _priceController;
 
   final FirestoreService _firestoreService = FirestoreService();
+
+  File? _newImage;
+  final StorageService _storageService = StorageService();
 
   @override
   void initState() {
@@ -38,14 +44,36 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     super.dispose();
   }
 
+  Future<void> _pickNewImage() async {
+    final ImagePicker picker = ImagePicker();
+    final XFile? xfile = await picker.pickImage(source: ImageSource.gallery);
+    if (xfile != null) {
+      setState(() {
+        _newImage = File(xfile.path);
+      });
+    }
+  }
+
   Future<void> _saveChanges() async {
+    String imageUrl = widget.product.imageUrl;
+    // If a new image was selected, upload it
+    if (_newImage != null) {
+      try {
+        imageUrl = await _storageService.uploadImage(_newImage!);
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error uploading new image: $e')),
+        );
+        return;
+      }
+    }
     // Create an updated product, keeping the same id and imageUrl
     final updatedProduct = Product(
       id: widget.product.id,
       name: _nameController.text,
       type: _typeController.text,
       price: double.tryParse(_priceController.text) ?? 0.0,
-      imageUrl: widget.product.imageUrl,
+      imageUrl: imageUrl,
     );
 
     try {
@@ -69,10 +97,18 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            widget.product.imageUrl.isNotEmpty
-                ? Image.network(widget.product.imageUrl,
-                    height: 150, fit: BoxFit.cover)
-                : const Icon(Icons.image, size: 100),
+            // Display current or newly selected image
+            _newImage != null
+                ? Image.file(_newImage!, height: 150, fit: BoxFit.cover)
+                : (widget.product.imageUrl.isNotEmpty
+                    ? Image.network(widget.product.imageUrl,
+                        height: 150, fit: BoxFit.cover)
+                    : const Icon(Icons.image, size: 100)),
+            const SizedBox(height: 10),
+            ElevatedButton(
+              onPressed: _pickNewImage,
+              child: const Text('Change Image'),
+            ),
             const SizedBox(height: 20),
             TextField(
               controller: _nameController,
